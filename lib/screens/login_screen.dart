@@ -20,6 +20,29 @@ class _LoginScreenState extends State<LoginScreen> {
   SMITrigger? trigSuccess; // Animación de éxito
   SMITrigger? trigFail; // Animación de fracaso
 
+  //--------------------- Segunda unidad----------------------------
+
+  // 1er paso: Crear las variables para controlar la animación
+  //FocusNode: Para detectar cuando se enfoca o desenfoca el campo de texto
+  final emailFocus = FocusNode();
+  final passFocus = FocusNode();
+
+  //2dp paso: Listeners(oyentes): Para detectar cuando se enfoca o desenfoca el campo de texto
+  @override
+  void initState() {
+    super.initState();
+    emailFocus.addListener(() {
+      if (emailFocus.hasFocus) {
+        //Manos abajo en email
+        isHandsUp?.change(false);
+      }
+    });
+    passFocus.addListener(() {
+      //Manos arriba en password
+      isHandsUp?.change(passFocus.hasFocus);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     //Para obtener el tamaño del dispositivo
@@ -57,10 +80,13 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 10),
               //Campo de texto del email
               TextField(
+                //Asignas el focusNode al campo de texto (TextField)
+                //Llamas a tu familia chismosa
+                focusNode: emailFocus,
                 onChanged: (value) {
                   if (isHandsUp != null) {
                     //No tapar los ojos al escribir email
-                    isHandsUp!.change(false);
+                    // isHandsUp!.change(false);
                   }
                   if (isChecking == null) return;
                   //Activa modo chismoso/seguimiento
@@ -84,10 +110,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
               //Campo de texto de contraseña con ojito
               TextField(
+                //Asignas el focusNode al campo de texto (TextField)
+                focusNode: passFocus,
                 onChanged: (value) {
                   if (isChecking != null) {
                     //No tapar los ojos al escribir email
-                    isChecking!.change(false);
+                    // isChecking!.change(false);
                   }
                   if (isHandsUp == null) return;
                   //Activa modo chismoso/seguimiento
@@ -169,5 +197,13 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Limpia los focus nodes cuando el widget se elimine
+    emailFocus.dispose();
+    passFocus.dispose();
+    super.dispose();
   }
 }
