@@ -157,6 +157,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 onChanged: (value) {
                   //Activa modo chismoso/seguimiento
                   isChecking!.change(true);
+
+                  final look = (value.length / 80.0 * 100).clamp(0.0, 100.0);
+
+                  numLook?.value = look;
+
+                  _typingDebounce?.cancel();
+                  _typingDebounce = Timer(const Duration(seconds: 1), () {
+                    if (!mounted) {
+                      return;
+                    }
+                    isChecking?.change(false);
+                  });
+                  if (isHandsUp == null) return;
+                  isChecking!.change(true);
                 },
 
                 //Para que aparezca @ en moviles
