@@ -35,6 +35,60 @@ class _LoginScreenState extends State<LoginScreen> {
   //3.2 Timer para detener la mirada al dejar de teclear
   Timer? _typingDebounce;
 
+  //4.1 Controllers
+  final emailCtrl = TextEditingController();
+  final passCtrl = TextEditingController();
+
+  //4.2 Errores para mostrar en la UI
+  String? emailError;
+  String? passError;
+
+  // 4.3 Validadores
+  bool isValidEmail(String email) {
+    final re = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    return re.hasMatch(email);
+  }
+
+  bool isValidPassword(String pass) {
+    // mínimo 8, una mayúscula, una minúscula, un dígito y un especial
+    final re = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
+    );
+    return re.hasMatch(pass);
+  }
+
+  //4.4 Darle acción al boton
+  void _onLogin() {
+    final email = emailCtrl.text.trim();
+    final pass = passCtrl.text;
+
+    //Recalcular errores
+    final eError = isValidEmail(email) ? null : "APRENDE A LEER";
+    final pError = isValidPassword(pass)
+        ? null
+        : "Minimo 8 caracteres, 1 mayuscula, 1 minuscula, 1 numero y 1 caracter especial";
+
+    //4.5 Para avisar que hubo un cambio
+    setState(() {
+      emailError = eError;
+      passError = pError;
+    });
+
+    //4.6 Cerrar teclado y bajar las manos
+    FocusScope.of(context).unfocus();
+    _typingDebounce?.cancel();
+    isChecking?.change(false);
+    isHandsUp?.change(false);
+    numLook?.value = 50.0; //Mirada neutral
+
+    //4.7 Activar triggers
+    if (eError == null && pError == null) {
+      trigSuccess?.fire();
+    } else {
+      trigFail?.fire();
+    }
+  }
+
   //2dp paso: Listeners(oyentes): Para detectar cuando se enfoca o desenfoca el campo de texto
   @override
   void initState() {
@@ -93,34 +147,14 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 10),
               //Campo de texto del email
               TextField(
-                //Asignas el focusNode al campo de texto (TextField)
+                //1.3 Asignas el focusNode al campo de texto (TextField)
                 //Llamas a tu familia chismosa
                 focusNode: emailFocus,
+
+                //4.8 Enlazar controller al TextField
+                controller: emailCtrl,
+
                 onChanged: (value) {
-                  if (isHandsUp != null) {
-                    //No tapar los ojos al escribir email
-                    // isHandsUp!.change(false);
-
-                    //"Estoy escribiendo"
-                    isChecking!.change(true);
-
-                    //Ajuste de limites de 0 100
-                    //80 es una medida de calibración
-                    final look = (value.length / 60.0 * 100).clamp(0.0, 100.0);
-                    numLook?.value = look;
-
-                    //3.3 Debounce: Si vuelve a teclear, reinicia el contador
-                    _typingDebounce
-                        ?.cancel(); //Cancela cualquier timer existente
-                    _typingDebounce = Timer(const Duration(seconds: 2), () {
-                      if (!mounted) {
-                        return; //si la pantalla se cierra
-                      }
-                      //Mirada neutra
-                      isChecking?.change(false);
-                    });
-                  }
-                  if (isChecking == null) return;
                   //Activa modo chismoso/seguimiento
                   isChecking!.change(true);
                 },
@@ -128,6 +162,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 //Para que aparezca @ en moviles
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
+                  //4.8 Mostrar el texto del error
+                  errorText: emailError,
                   labelText: "Email",
                   prefixIcon: const Icon(Icons.email),
                   border: OutlineInputBorder(
@@ -144,6 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 //Asignas el focusNode al campo de texto (TextField)
                 focusNode: passFocus,
+                controller: passCtrl,
                 onChanged: (value) {
                   if (isChecking != null) {
                     //No tapar los ojos al escribir email
@@ -157,6 +194,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: _obscurePassword,
                 keyboardType: TextInputType.visiblePassword,
                 decoration: InputDecoration(
+                  //4.9 Mostrar el texto del error
+                  errorText: passError,
                   labelText: "Contraseña",
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
@@ -197,9 +236,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  onPressed: () {
-                    //TODO:
-                  },
+
+                  //4.10 Llamar a la función de login
+                  onPressed: _onLogin,
                   child: const Text("Login",
                       style: TextStyle(color: Colors.white))),
               const SizedBox(height: 10),
@@ -233,7 +272,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    // Limpia los focus nodes cuando el widget se elimine
+    // 1.4 Limpia los focus nodes cuando el widget se elimine
+    //4.11 Limpieza de los controllers
+    emailCtrl.dispose();
+    passCtrl.dispose();
     emailFocus.dispose();
     passFocus.dispose();
     _typingDebounce?.cancel(); //Cancelar el timer si está activo
